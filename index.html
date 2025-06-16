@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced QR Card Designer</title>
+    <script src="./qrcode.min.js"></script>
+    <script src="./jszip.min.js"></script>
+    <script src="./FileSaver.min.js"></script>
+    <script src="./html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --accent: #4cc9f0;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #2ec4b6;
+            --warning: #ff9f1c;
+            --danger: #e71d36;
+            --border-radius: 12px;
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        h1 {
+            color: var(--secondary);
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .description {
+            color: #555;
+            max-width: 700px;
+            margin: 10px auto 0;
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .input-section {
+            flex: 1;
+            min-width: 350px;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .preview-section {
+            flex: 1;
+            min-width: 350px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-preview {
+            background: rgba(255, 255, 255, 0.85);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.85);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            color: var(--secondary);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--accent);
+            font-size: 1.3rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #444;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: var(--transition);
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3);
+        }
+
+        .btn:hover {
+            background: var(--secondary);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(67, 97, 238, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn i {
+            font-size: 18px;
+        }
+
+        .btn-block {
+            display: block;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .btn-success {
+            background: var(--success);
+            box-shadow: 0 4px 10px rgba(46, 196, 182, 0.3);
+        }
+
+        .btn-success:hover {
+            background: #25a99a;
+            box-shadow: 0 6px 15px rgba(46, 196, 182, 0.4);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            box-shadow: 0 4px 10px rgba(255, 159, 28, 0.3);
+        }
+
+        .btn-warning:hover {
+            background: #e68e00;
+        }
+
+        .card {
+            width: 8.5cm;
+            height: 5.5cm;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+            margin: 20px 0;
+            border: 1px solid #eee;
+        }
+
+        .card-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0.9;
+            z-index: 1;
+        }
+
+        .card-content {
+            position: relative;
+            z-index: 3;
+            width: 100%;
+            height: 100%;
+        }
+
+        .qr-container {
+            position: absolute;
+            z-index: 4;
+            transition: var(--transition);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .qr-canvas {
+            border: 5px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            background: white;
+        }
+
+        .qr-circle {
+            border-radius: 50%;
+        }
+
+        .qr-rounded {
+            border-radius: 15px;
+        }
+
+        .qr-square {
+            border-radius: 0;
+        }
+
+        .qr-center-image {
+            position: absolute;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 3px solid white;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+            z-index: 5;
+        }
+
+        .qr-center-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-title {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            padding: 0 15px;
+            z-index: 5;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+            display: none;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .status.processing {
+            background: #cce5ff;
+            color: #004085;
+            display: block;
+        }
+
+        .counter {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .color-option {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+            transition: var(--transition);
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.active {
+            transform: scale(1.15);
+            box-shadow: 0 0 0 3px var(--primary);
+        }
+
+        .position-controls {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .position-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .position-input {
+            display: flex;
+            margin-top: 5px;
+        }
+
+        .position-input input {
+            border-radius: 8px 0 0 8px;
+        }
+
+        .position-input select {
+            width: auto;
+            border-radius: 0 8px 8px 0;
+            border-left: none;
+        }
+
+        .position-reset {
+            margin-top: 15px;
+        }
+
+        .hint {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        /* Footer */
+        footer {
+            background: rgba(251, 251, 251, 0.8);
+            backdrop-filter: blur(var(--blur-intensity));
+            -webkit-backdrop-filter: blur(var(--blur-intensity));
+            padding: 2rem;
+            text-align: center;
+            border-top: 1px solid rgba(92, 225, 230, 0.1);
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--teal-accent);
+        }
+
+        .footer-logo i {
+            font-size: 1.8rem;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .footer-links a:hover {
+            color: var(--teal-accent);
+            transform: translateY(-3px);
+        }
+
+        .copyright {
+            color: var(--text-tertiary);
+            font-size: 0.9rem;
+        }
+
+        .export-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .hidden {
+            display: none;
+            position: absolute;
+            left: -9999px;
+        }
+
+        .border-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .border-option {
+            padding: 10px;
+            text-align: center;
+            border-radius: 8px;
+            background: rgba(67, 97, 238, 0.1);
+            cursor: pointer;
+            transition: var(--transition);
+            border: 2px solid transparent;
+        }
+
+        .border-option:hover {
+            background: rgba(67, 97, 238, 0.2);
+        }
+
+        .border-option.active {
+            background: var(--primary);
+            color: white;
+            border-color: white;
+        }
+
+        .border-option i {
+            font-size: 20px;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .color-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .color-input {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .color-input label {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .eyedropper-btn {
+            background: #5a67d8;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .eyedropper-btn:hover {
+            background: #4c51bf;
+        }
+
+        .size-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .size-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .border-style-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .border-style-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            .card {
+                transform: scale(0.9);
+            }
+
+            .position-controls,
+            .size-controls,
+            .border-style-controls {
+                grid-template-columns: 1fr;
+            }
+
+            .export-container {
+                flex-direction: column;
+            }
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .export-card {
+            width: 8.5cm;
+            height: 5.5cm;
+            background: white;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #eee;
+        }
+
+        .quality-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .quality-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .feature-badge {
+            background: var(--primary);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-qrcode"></i> Enhanced QR Card Designer</h1>
+            <p class="description">Create professional 8.5x5.5 cm cards with precise QR code control, QR
+                size, center image size, QR background, and quality settings.</p>
+        </header>
+
+        <div class="main-content">
+            <div class="input-section">
+                <div class="form-group">
+                    <h3 class="section-title"><i class="fas fa-link"></i> URLs</h3>
+                    <label for="links">Enter your links (one per line, max 30)</label>
+                    <textarea id="links" placeholder="https://example.com"></textarea>
+                    <div class="counter">
+                        <span>Links entered: <strong id="linkCount">0</strong></span>
+                        <span>Max: <strong>30</strong></span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <h3 class="section-title"><i class="fas fa-paint-brush"></i> Design</h3>
+                    <label for="cardTitle">Card Title</label>
+                    <input type="text" id="cardTitle" placeholder="Scan to visit" value="Scan QR Code">
+
+                    <label style="margin-top: 20px;">QR Code Color</label>
+                    <div class="color-picker">
+                        <div class="color-option active" style="background: #4361ee;" data-color="#4361ee" title="Blue">
+                        </div>
+                        <div class="color-option" style="background: #e76f51;" data-color="#e76f51" title="Coral"></div>
+                        <div class="color-option" style="background: #2a9d8f;" data-color="#2a9d8f" title="Teal"></div>
+                        <div class="color-option" style="background: #e9c46a;" data-color="#e9c46a" title="Gold"></div>
+                        <div class="color-option" style="background: #9d4edd;" data-color="#9d4edd" title="Purple">
+                        </div>
+                        <div class="color-option" style="background: #2b2d42;" data-color="#2b2d42" title="Dark Blue">
+                        </div>
+                    </div>
+
+                    <div class="color-controls">
+                        <div class="color-input">
+                            <label for="customColor">Custom Color</label>
+                            <input type="color" id="customColor" value="#4361ee">
+                        </div>
+                        <button id="eyedropperBtn" class="eyedropper-btn" title="Pick color from screen">
+                            <i class="fas fa-eye-dropper"></i>
+                        </button>
+                    </div>
+
+                    <label style="margin-top: 20px;">QR Background Color</label>
+                    <div class="color-controls">
+                        <div class="color-input">
+                            <input type="color" id="qrBgColor" value="#ffffff">
+                        </div>
+                    </div>
+
+                    <label style="margin-top: 20px;">QR Border Style</label>
+                    <div class="border-controls">
+                        <div class="border-option active" data-shape="circle">
+                            <i class="fas fa-circle"></i>
+                            <span>Circle</span>
+                        </div>
+                        <div class="border-option" data-shape="rounded">
+                            <i class="fas fa-square"></i>
+                            <span>Rounded</span>
+                        </div>
+                        <div class="border-option" data-shape="square">
+                            <i class="fas fa-square-full"></i>
+                            <span>Square</span>
+                        </div>
+                    </div>
+
+                    <div class="size-controls">
+                        <div class="size-group">
+                            <label for="qrSize">QR Size (px)</label>
+                            <input type="number" id="qrSize" min="80" max="200" value="120">
+                        </div>
+                        <div class="size-group">
+                            <label for="borderWidth">Border Width (px)</label>
+                            <input type="number" id="borderWidth" min="0" max="20" value="5">
+                        </div>
+                    </div>
+
+                    <div class="border-style-controls">
+                        <div class="border-style-group">
+                            <label for="borderColor">Border Color</label>
+                            <input type="color" id="borderColor" value="#ffffff">
+                        </div>
+                        <div class="border-style-group">
+                            <label for="borderOpacity">Border Opacity</label>
+                            <input type="range" id="borderOpacity" min="0" max="100" value="70">
+                        </div>
+                    </div>
+
+                    <div class="size-controls">
+                        <div class="size-group">
+                            <label for="centerImageSize">Center Image Size <span
+                                    class="feature-badge">NEW</span></label>
+                            <input type="range" id="centerImageSize" min="0" max="50" value="33">
+                            <div class="counter">
+                                <span>Size: <strong id="centerImageSizeValue">33%</strong> of QR</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <label style="margin-top: 20px;">QR Position (X/Y Coordinates)</label>
+                    <div class="position-controls">
+                        <div class="position-group">
+                            <label for="qrX">X Position:</label>
+                            <div class="position-input">
+                                <input type="number" id="qrX" value="50" min="0">
+                                <select id="qrXUnit">
+                                    <option value="px">px</option>
+                                    <option value="%" selected>%</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="position-group">
+                            <label for="qrY">Y Position:</label>
+                            <div class="position-input">
+                                <input type="number" id="qrY" value="50" min="0">
+                                <select id="qrYUnit">
+                                    <option value="px">px</option>
+                                    <option value="%" selected>%</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="resetPosition" class="btn btn-warning position-reset">
+                        <i class="fas fa-sync-alt"></i> Reset to Center
+                    </button>
+                    <p class="hint">Use percentage or pixel values to position QR code</p>
+                </div>
+
+                <div class="form-group">
+                    <h3 class="section-title"><i class="fas fa-image"></i> Images</h3>
+                    <label for="centerImage">Center Image (for QR code)</label>
+                    <input type="file" id="centerImage" accept="image/*">
+                    <p class="hint">Optional: A small image to place at the center of QR</p>
+
+                    <label style="margin-top: 20px;" for="bgImage">Background Image</label>
+                    <input type="file" id="bgImage" accept="image/*">
+                    <p class="hint">Background for the entire card</p>
+                </div>
+
+                <div class="form-group">
+                    <h3 class="section-title"><i class="fas fa-cogs"></i> Quality Settings</h3>
+
+                    <div class="quality-controls">
+                        <div class="quality-group">
+                            <label for="qrQuality">QR Error Correction <span class="feature-badge">NEW</span></label>
+                            <select id="qrQuality">
+                                <option value="L">Low (7%)</option>
+                                <option value="M" selected>Medium (15%)</option>
+                                <option value="Q">Quartile (25%)</option>
+                                <option value="H">High (30%)</option>
+                            </select>
+                        </div>
+
+                        <div class="quality-group">
+                            <label for="exportQuality">Export Image Quality <span
+                                    class="feature-badge">NEW</span></label>
+                            <select id="exportQuality">
+                                <option value="1">Standard (1x)</option>
+                                <option value="2" selected>High (2x)</option>
+                                <option value="3">Very High (3x)</option>
+                                <option value="4">Ultra High (4x)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <p class="hint">Higher quality settings produce larger files but better results</p>
+                </div>
+
+                <button id="previewBtn" class="btn">
+                    <i class="fas fa-sync-alt"></i> Update Preview
+                </button>
+            </div>
+
+            <div class="preview-section">
+                <div class="card-preview">
+                    <h3 class="section-title"><i class="fas fa-eye"></i> Card Preview</h3>
+                    <div class="card">
+                        <div class="card-bg" id="cardBgPreview"
+                            style="background-image: url('https://images.unsplash.com/photo-1493246507139-91e8fad9978e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80');">
+                        </div>
+                        <div class="card-content">
+                            <div class="qr-container" id="qrPosition">
+                                <canvas id="qrCanvas" class="qr-canvas qr-circle"></canvas>
+                                <div class="qr-center-image" id="centerImageContainer">
+                                    <img id="centerImagePreview"
+                                        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24'%3E%3Cpath fill='%234361ee' d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2a7.2 7.2 0 0 1-6-3.22c.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08a7.2 7.2 0 0 1-6 3.22z'/%3E%3C/svg%3E"
+                                        alt="Center">
+                                </div>
+                            </div>
+                            <div class="card-title">Scan QR Code</div>
+                        </div>
+                    </div>
+                    <p class="hint">Actual card size: 8.5cm × 5.5cm</p>
+                </div>
+
+                <div class="controls">
+                    <div class="status" id="status"></div>
+                    <div class="progress-bar" id="progressBar" style="display: none;">
+                        <div class="progress" id="progress"></div>
+                    </div>
+
+                    <div class="export-container">
+                        <button id="downloadSingleBtn" class="btn">
+                            <i class="fas fa-download"></i> Download This Card
+                        </button>
+                        <button id="downloadAllBtn" class="btn btn-success">
+                            <i class="fas fa-file-archive"></i> Download All Cards
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export card template (hidden) -->
+        <div id="exportCardTemplate" class="hidden">
+            <div class="export-card">
+                <div class="card-bg" id="exportCardBg"></div>
+                <div class="card-content">
+                    <div class="qr-container" id="exportQrPosition">
+                        <canvas id="exportQrCode"></canvas>
+                        <div class="qr-center-image" id="exportCenterImage">
+                            <img id="exportCenterImg" src="" alt="Center">
+                        </div>
+                    </div>
+                    <div class="card-title" id="exportCardTitle"></div>
+                </div>
+            </div>
+        </div>
+
+        <header>
+            <div class="header">
+                <div class="footer-logo">
+
+                    <span>Advanced QR Card Designer</span>
+                </div>
+                <div class="footer-links">
+                    <a href="https://github.com/ZiadSafwat/advanced-qr-card-designer"><i class="fab fa-github"></i></a>
+                    <a href="mailto:Ziadsafwataraby@gmail.com"><i class="fas fa-envelope"></i></a>
+
+                </div>
+                <p class="copyright">© 2025 Advanced QR Card Designer. All rights reserved.</p>
+            </div>
+        </header>
+    </div>
+
+    <script>
+        // DOM Elements
+        const linksInput = document.getElementById('links');
+        const linkCount = document.getElementById('linkCount');
+        const cardTitleInput = document.getElementById('cardTitle');
+        const centerImageInput = document.getElementById('centerImage');
+        const centerImagePreview = document.getElementById('centerImagePreview');
+        const centerImageContainer = document.getElementById('centerImageContainer');
+        const bgImageInput = document.getElementById('bgImage');
+        const cardBgPreview = document.getElementById('cardBgPreview');
+        const previewBtn = document.getElementById('previewBtn');
+        const downloadSingleBtn = document.getElementById('downloadSingleBtn');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+        const qrCanvas = document.getElementById('qrCanvas');
+        const qrPositionElement = document.getElementById('qrPosition');
+        const statusElement = document.getElementById('status');
+        const colorOptions = document.querySelectorAll('.color-option');
+        const customColorInput = document.getElementById('customColor');
+        const eyedropperBtn = document.getElementById('eyedropperBtn');
+        const borderOptions = document.querySelectorAll('.border-option');
+        const qrXInput = document.getElementById('qrX');
+        const qrYInput = document.getElementById('qrY');
+        const qrXUnit = document.getElementById('qrXUnit');
+        const qrYUnit = document.getElementById('qrYUnit');
+        const resetPositionBtn = document.getElementById('resetPosition');
+        const qrSizeInput = document.getElementById('qrSize');
+        const borderWidthInput = document.getElementById('borderWidth');
+        const borderColorInput = document.getElementById('borderColor');
+        const borderOpacityInput = document.getElementById('borderOpacity');
+        const progressBar = document.getElementById('progressBar');
+        const progress = document.getElementById('progress');
+        const exportCardTemplate = document.getElementById('exportCardTemplate');
+        const qrBgColorInput = document.getElementById('qrBgColor');
+        const centerImageSizeInput = document.getElementById('centerImageSize');
+        const centerImageSizeValue = document.getElementById('centerImageSizeValue');
+        const qrQualityInput = document.getElementById('qrQuality');
+        const exportQualityInput = document.getElementById('exportQuality');
+
+        // State variables
+        let selectedColor = '#4361ee';
+        let centerImageData = null;
+        let bgImageData = null;
+        let currentLink = 'https://example.com';
+        let selectedBorder = 'circle';
+        let qrSize = 120;
+        let borderWidth = 5;
+        let borderColor = '#ffffff';
+        let borderOpacity = 70;
+        let qrBgColor = '#ffffff';
+        let centerImageSize = 33; // Percentage of QR size
+        let qrQuality = 'M';
+        let exportQuality = 2;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            updatePreview();
+            updateLinkCount();
+
+            // Initialize center image size display
+            centerImageSizeValue.textContent = `${centerImageSize}%`;
+        });
+
+        // Update link count
+        linksInput.addEventListener('input', updateLinkCount);
+
+        function updateLinkCount() {
+            const links = linksInput.value.split('\n').filter(link => link.trim() !== '');
+            linkCount.textContent = links.length;
+        }
+
+        // Color selection - predefined colors
+        colorOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                colorOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+                selectedColor = option.dataset.color;
+                customColorInput.value = selectedColor;
+                updatePreview();
+            });
+        });
+
+        // Custom color input
+        customColorInput.addEventListener('input', () => {
+            selectedColor = customColorInput.value;
+            // Find matching predefined color and activate it
+            let matched = false;
+            colorOptions.forEach(opt => {
+                if (opt.dataset.color === selectedColor) {
+                    opt.classList.add('active');
+                    matched = true;
+                } else {
+                    opt.classList.remove('active');
+                }
+            });
+
+            // If no match, deselect all predefined colors
+            if (!matched) {
+                colorOptions.forEach(opt => opt.classList.remove('active'));
+            }
+
+            updatePreview();
+        });
+
+        // QR Background Color
+        qrBgColorInput.addEventListener('input', () => {
+            qrBgColor = qrBgColorInput.value;
+            updatePreview();
+        });
+
+        // Center Image Size
+        centerImageSizeInput.addEventListener('input', () => {
+            centerImageSize = parseInt(centerImageSizeInput.value);
+            centerImageSizeValue.textContent = `${centerImageSize}%`;
+            updatePreview();
+        });
+
+        // QR Quality Level
+        qrQualityInput.addEventListener('change', () => {
+            qrQuality = qrQualityInput.value;
+            updatePreview();
+        });
+
+        // Export Quality Level
+        exportQualityInput.addEventListener('change', () => {
+            exportQuality = parseInt(exportQualityInput.value);
+        });
+
+        // Eyedropper functionality
+        if (window.EyeDropper) {
+            eyedropperBtn.addEventListener('click', async () => {
+                try {
+                    const eyeDropper = new EyeDropper();
+                    const result = await eyeDropper.open();
+                    selectedColor = result.sRGBHex;
+                    customColorInput.value = selectedColor;
+
+                    // Update predefined colors selection
+                    colorOptions.forEach(opt => opt.classList.remove('active'));
+                    updatePreview();
+                } catch (err) {
+                    showStatus('Color selection cancelled', 'error');
+                }
+            });
+        } else {
+            eyedropperBtn.style.display = 'none';
+        }
+
+        // Border style selection
+        borderOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                borderOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+                selectedBorder = option.dataset.shape;
+                updatePreview();
+            });
+        });
+
+        // QR size input
+        qrSizeInput.addEventListener('input', () => {
+            qrSize = parseInt(qrSizeInput.value);
+            updatePreview();
+        });
+
+        // Border width input
+        borderWidthInput.addEventListener('input', () => {
+            borderWidth = parseInt(borderWidthInput.value);
+            updatePreview();
+        });
+
+        // Border color input
+        borderColorInput.addEventListener('input', () => {
+            borderColor = borderColorInput.value;
+            updatePreview();
+        });
+
+        // Border opacity input
+        borderOpacityInput.addEventListener('input', () => {
+            borderOpacity = parseInt(borderOpacityInput.value);
+            updatePreview();
+        });
+
+        // Position inputs
+        qrXInput.addEventListener('input', updateQrPosition);
+        qrYInput.addEventListener('input', updateQrPosition);
+        qrXUnit.addEventListener('change', updateQrPosition);
+        qrYUnit.addEventListener('change', updateQrPosition);
+
+        // Reset position
+        resetPositionBtn.addEventListener('click', () => {
+            qrXInput.value = 50;
+            qrYInput.value = 50;
+            qrXUnit.value = '%';
+            qrYUnit.value = '%';
+            updateQrPosition();
+        });
+
+        // Update QR position based on inputs
+        function updateQrPosition() {
+            const x = qrXInput.value;
+            const y = qrYInput.value;
+            const xUnit = qrXUnit.value;
+            const yUnit = qrYUnit.value;
+
+            // Update preview position
+            qrPositionElement.style.left = `${x}${xUnit}`;
+            qrPositionElement.style.top = `${y}${yUnit}`;
+
+            // If using pixels, adjust transform
+            if (xUnit === 'px' || yUnit === 'px') {
+                qrPositionElement.style.transform = 'none';
+            } else {
+                qrPositionElement.style.transform = 'translate(-50%, -50%)';
+            }
+        }
+
+        // Center image upload
+        centerImageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    centerImageData = event.target.result;
+                    centerImagePreview.src = centerImageData;
+                    updatePreview();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Background image upload
+        bgImageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    bgImageData = event.target.result;
+                    cardBgPreview.style.backgroundImage = `url(${bgImageData})`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Preview button
+        previewBtn.addEventListener('click', updatePreview);
+
+        // Update preview
+        function updatePreview() {
+            const title = cardTitleInput.value || 'Scan QR Code';
+            document.querySelector('.card-title').textContent = title;
+
+            // Set QR size
+            qrPositionElement.style.width = `${qrSize}px`;
+            qrPositionElement.style.height = `${qrSize}px`;
+
+            // Set border style
+            qrCanvas.className = 'qr-canvas';
+            qrCanvas.classList.add(`qr-${selectedBorder}`);
+
+            // Set border properties
+            const borderOpacityValue = borderOpacity / 100;
+            const borderRGBA = hexToRGBA(borderColor, borderOpacityValue);
+            qrCanvas.style.border = `${borderWidth}px solid ${borderRGBA}`;
+
+            // Set center image size (percentage of QR size)
+            const centerSize = Math.round(qrSize * (centerImageSize / 100));
+            centerImageContainer.style.width = `${centerSize}px`;
+            centerImageContainer.style.height = `${centerSize}px`;
+
+            // Apply border radius for center image
+            if (selectedBorder === 'circle') {
+                centerImageContainer.style.borderRadius = '50%';
+            } else if (selectedBorder === 'rounded') {
+                centerImageContainer.style.borderRadius = '15%';
+            } else {
+                centerImageContainer.style.borderRadius = '0';
+            }
+
+            // Generate QR code for preview
+            QRCode.toCanvas(qrCanvas, currentLink, {
+                width: qrSize,
+                margin: 1,
+                errorCorrectionLevel: qrQuality,
+                color: {
+                    dark: selectedColor,
+                    light: qrBgColor
+                }
+            }, (error) => {
+                if (error) {
+                    showStatus('Error generating QR code: ' + error, 'error');
+                } else {
+                    // Fix white corners by drawing background color
+                    const ctx = qrCanvas.getContext('2d');
+                    ctx.globalCompositeOperation = 'destination-over';
+                    ctx.fillStyle = qrBgColor;
+                    if (selectedBorder === 'circle') {
+                        ctx.beginPath();
+                        ctx.arc(qrSize / 2, qrSize / 2, qrSize / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else if (selectedBorder === 'rounded') {
+                        const radius = 15;
+                        ctx.beginPath();
+                        ctx.moveTo(radius, 0);
+                        ctx.lineTo(qrSize - radius, 0);
+                        ctx.quadraticCurveTo(qrSize, 0, qrSize, radius);
+                        ctx.lineTo(qrSize, qrSize - radius);
+                        ctx.quadraticCurveTo(qrSize, qrSize, qrSize - radius, qrSize);
+                        ctx.lineTo(radius, qrSize);
+                        ctx.quadraticCurveTo(0, qrSize, 0, qrSize - radius);
+                        ctx.lineTo(0, radius);
+                        ctx.quadraticCurveTo(0, 0, radius, 0);
+                        ctx.fill();
+                    } else {
+                        ctx.fillRect(0, 0, qrSize, qrSize);
+                    }
+                }
+            });
+        }
+
+        // Convert hex to RGBA
+        function hexToRGBA(hex, opacity) {
+            let r = 0, g = 0, b = 0;
+
+            // 3 digits
+            if (hex.length === 4) {
+                r = parseInt(hex[1] + hex[1], 16);
+                g = parseInt(hex[2] + hex[2], 16);
+                b = parseInt(hex[3] + hex[3], 16);
+            }
+            // 6 digits
+            else if (hex.length === 7) {
+                r = parseInt(hex[1] + hex[2], 16);
+                g = parseInt(hex[3] + hex[4], 16);
+                b = parseInt(hex[5] + hex[6], 16);
+            }
+
+            return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+        }
+
+        // Download single card
+        downloadSingleBtn.addEventListener('click', async () => {
+            try {
+                showStatus('Generating card...', 'processing');
+
+                // Generate the card image
+                const cardData = await generateCardImage(currentLink);
+
+                // Create download link
+                const link = document.createElement('a');
+                link.href = `data:image/png;base64,${cardData}`;
+                link.download = 'qr-card.png';
+                link.click();
+
+                showStatus('Card downloaded successfully!', 'success');
+            } catch (error) {
+                showStatus('Error generating card: ' + error.message, 'error');
+                console.error(error);
+            }
+        });
+
+        // Download all cards
+        downloadAllBtn.addEventListener('click', async () => {
+            const links = linksInput.value.split('\n')
+                .filter(link => link.trim() !== '')
+                .slice(0, 30);
+
+            if (links.length === 0) {
+                showStatus('Please enter at least one URL', 'error');
+                return;
+            }
+
+            showStatus(`Generating ${links.length} cards... Please wait`, 'processing');
+            progressBar.style.display = 'block';
+            progress.style.width = '0%';
+
+            try {
+                // Create a zip file
+                const zip = new JSZip();
+
+                // Generate each card
+                for (let i = 0; i < links.length; i++) {
+                    const link = links[i];
+
+                    // Update progress
+                    const percent = Math.round((i + 1) / links.length * 100);
+                    progress.style.width = `${percent}%`;
+                    statusElement.textContent = `Generating card ${i + 1} of ${links.length}...`;
+
+                    // Generate the card image
+                    const cardData = await generateCardImage(link);
+
+                    // Add to zip
+                    zip.file(`qr-card-${i + 1}.png`, cardData, { base64: true });
+                }
+
+                // Generate the zip file
+                const content = await zip.generateAsync({ type: 'blob' });
+                saveAs(content, 'qr-cards.zip');
+
+                showStatus(`Success! Downloaded ${links.length} cards`, 'success');
+                progressBar.style.display = 'none';
+            } catch (error) {
+                showStatus('Error generating cards: ' + error.message, 'error');
+                console.error(error);
+                progressBar.style.display = 'none';
+            }
+        });
+
+        // Generate card image with fixed issues
+        async function generateCardImage(url) {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    // Create a clone of the export card template
+                    const exportCard = exportCardTemplate.cloneNode(true);
+                    exportCard.id = 'tempExportCard';
+                    exportCard.style.display = 'block';
+                    document.body.appendChild(exportCard);
+
+                    // Get elements
+                    const card = exportCard.querySelector('.export-card');
+                    const cardBg = exportCard.querySelector('.card-bg');
+                    const qrContainer = exportCard.querySelector('.qr-container');
+                    const qrCanvas = exportCard.querySelector('canvas');
+                    const centerImage = exportCard.querySelector('#exportCenterImg');
+                    const cardTitle = exportCard.querySelector('.card-title');
+
+                    // Set card title
+                    cardTitle.textContent = cardTitleInput.value || 'Scan QR Code';
+
+                    // Set background image
+                    if (bgImageData) {
+                        cardBg.style.backgroundImage = `url(${bgImageData})`;
+                    } else {
+                        cardBg.style.backgroundImage = cardBgPreview.style.backgroundImage;
+                    }
+
+                    // Set center image
+                    if (centerImageData) {
+                        centerImage.src = centerImageData;
+                    } else {
+                        centerImage.src = centerImagePreview.src;
+                    }
+
+                    // Set QR size and position
+                    qrContainer.style.width = `${qrSize}px`;
+                    qrContainer.style.height = `${qrSize}px`;
+                    qrContainer.style.left = qrPositionElement.style.left;
+                    qrContainer.style.top = qrPositionElement.style.top;
+                    qrContainer.style.transform = qrPositionElement.style.transform;
+
+                    // Set border properties
+                    const borderOpacityValue = borderOpacity / 100;
+                    const borderRGBA = hexToRGBA(borderColor, borderOpacityValue);
+                    qrCanvas.style.border = `${borderWidth}px solid ${borderRGBA}`;
+
+                    // Set center image size
+                    const centerImageContainer = exportCard.querySelector('.qr-center-image');
+                    const centerSize = Math.round(qrSize * (centerImageSize / 100));
+                    centerImageContainer.style.width = `${centerSize}px`;
+                    centerImageContainer.style.height = `${centerSize}px`;
+
+                    // Apply border radius for center image
+                    if (selectedBorder === 'circle') {
+                        centerImageContainer.style.borderRadius = '50%';
+                        qrCanvas.classList.add('qr-circle');
+                    } else if (selectedBorder === 'rounded') {
+                        centerImageContainer.style.borderRadius = '15%';
+                        qrCanvas.classList.add('qr-rounded');
+                    } else {
+                        centerImageContainer.style.borderRadius = '0';
+                        qrCanvas.classList.add('qr-square');
+                    }
+
+                    // Generate QR code
+                    await QRCode.toCanvas(qrCanvas, url, {
+                        width: qrSize,
+                        margin: 1,
+                        errorCorrectionLevel: qrQuality,
+                        color: {
+                            dark: selectedColor,
+                            light: qrBgColor
+                        }
+                    });
+
+                    // Fix white corners by drawing background color
+                    const ctx = qrCanvas.getContext('2d');
+                    ctx.globalCompositeOperation = 'destination-over';
+                    ctx.fillStyle = qrBgColor;
+                    if (selectedBorder === 'circle') {
+                        ctx.beginPath();
+                        ctx.arc(qrSize / 2, qrSize / 2, qrSize / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else if (selectedBorder === 'rounded') {
+                        const radius = 15;
+                        ctx.beginPath();
+                        ctx.moveTo(radius, 0);
+                        ctx.lineTo(qrSize - radius, 0);
+                        ctx.quadraticCurveTo(qrSize, 0, qrSize, radius);
+                        ctx.lineTo(qrSize, qrSize - radius);
+                        ctx.quadraticCurveTo(qrSize, qrSize, qrSize - radius, qrSize);
+                        ctx.lineTo(radius, qrSize);
+                        ctx.quadraticCurveTo(0, qrSize, 0, qrSize - radius);
+                        ctx.lineTo(0, radius);
+                        ctx.quadraticCurveTo(0, 0, radius, 0);
+                        ctx.fill();
+                    } else {
+                        ctx.fillRect(0, 0, qrSize, qrSize);
+                    }
+
+                    // Capture with html2canvas
+                    const canvas = await html2canvas(card, {
+                        scale: exportQuality,
+                        backgroundColor: null,
+                        logging: false,
+                        useCORS: true
+                    });
+
+                    // Remove temporary card
+                    document.body.removeChild(exportCard);
+
+                    // Return as base64
+                    resolve(canvas.toDataURL('image/png').split(',')[1]);
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        }
+
+        // Show status message
+        function showStatus(message, type) {
+            statusElement.textContent = message;
+            statusElement.className = 'status ' + type;
+            statusElement.style.display = 'block';
+
+            // Auto-hide success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusElement.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Initialize preview
+        updateQrPosition();
+        updatePreview();
+    </script>
+</body>
+
+</html>
