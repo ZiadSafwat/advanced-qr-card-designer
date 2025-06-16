@@ -3,7 +3,9 @@
 > A web-based tool for creating professional QR code cards with precise customization options
 
 **Note from the developer**: I'm primarily a mobile developer with limited web experience. While this project works well, the code structure might not follow best web development practices. at the end this tool made with help of Ai !
+## Live Demo
 
+👉 [Try it now!](https://ziadsafwat.github.io/advanced-qr-card-designer/)
 ## Features
 
 - 🎨 Create custom QR code cards (8.5x5.5 cm)
